@@ -8,5 +8,4 @@ google-cloud-bigquery
 google-cloud-aiplatform
 google-cloud-discoveryengine
 google-api-core
-#pandas
-#db-dtypes
+#pandas-gbq

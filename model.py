@@ -1,7 +1,7 @@
 import vertexai
-#import pandas
+
 import re
-#import db_dtypes
+
 from google.cloud import bigquery
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -86,35 +86,42 @@ def generateQuery(project_id: str, region: str, input_string: str) -> str:
         return f"Error generating query: {e}"
     
 
-
-def getBQResponse(project_id: str, region: str, query: str) -> str:
-    # Construct a BigQuery client object.
-    print ("Query: ", query)
-    client = bigquery.Client()
-    query_job = client.query(query)
-    results = query_job.result()
-    df = results.to_dataframe()
-    print("BQ Response", df)
-    return df
+def delete_all_blobs(bucket_name):
+    """Deletes all the blobs in the given bucket."""
+    storage_client = storage.Client()
+    blobs = storage_client.list_blobs(bucket_name)
+    for blob in blobs:
+        blob.delete()
+    print(f"All blobs in bucket {bucket_name} have been deleted.")
 
 def getOffers(project_id: str, region: str, query: str):
     client = bigquery.Client()
     query_job = client.query(query)
     results = query_job.result()
-    df = results.to_dataframe()
-    print("Query: ", query, ", Offer Query Response\n", df)
-    return df
+    #df = results.to_dataframe()
+    print("Query: ", query, ", Offer Query Response\n", results)
+    return results
 
 
-def generate_pdf(df):
+def generate_pdf(results):
     storage_client = storage.Client()
     bucket = storage_client.bucket(config.BUCKET_NAME)
-    df = df.fillna('None')
+    #df = df.fillna('None')
     pattern = r"[^a-zA-Z0-9\s]" 
     uris = ""
     uriList = []
-    for index, row in df.iterrows():
-        cleaned_text = re.sub(pattern, '', row['offer_Name'])
+    for row in results:
+
+        offer_Name = row.get('program_name')
+        program_description = row.get('program_description') or 'None'
+        program_number = row.get('p_number') or 'None'
+        commit_required = "Yes" if row.get('commit_required') else "No"
+        customer_segment = row.get('customer_segment') or 'None'
+        qualification_criteria = row.get('qualification_criteria') or 'None'
+        calltoaction = row.get('call_to_action') or 'None'
+        offer_status = row.get('launch_status') or 'None'
+
+        cleaned_text = re.sub(pattern, '', offer_Name)
         fileName = cleaned_text + ".pdf"
 
         buffer = BytesIO()
@@ -123,28 +130,41 @@ def generate_pdf(df):
         story = []
         styles = getSampleStyleSheet()
 
-        # Section 1
-        story.append(Paragraph(row['offer_Name'], styles['Heading1']))
-        story.append(Paragraph(row['program_description'], styles['Normal']))
+        # Heading/Description
+        story.append(Paragraph(offer_Name, styles['Heading1']))
+        story.append(Paragraph(program_description, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space
+        
+        # Program Number
+        story.append(Paragraph("Program Number", styles['Heading1']))
+        story.append(Paragraph(program_number, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space
 
-        story.append(Spacer(1, 12))  # Add some space after para#1
+        # Customer Segment
+        story.append(Paragraph("Customer Segment", styles['Heading1']))
+        story.append(Paragraph(customer_segment, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space
 
-        # Section 2
+        # Eligibility
         story.append(Paragraph("Eligibility Criteria", styles['Heading1']))
-        story.append(Paragraph(row['qualification_criteria'], styles['Normal']))
+        story.append(Paragraph(qualification_criteria, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space
 
-        story.append(Spacer(1, 12))  # Add some space after para#2
 
-        # Section 3
-
+        # More Details
         story.append(Paragraph("More Details", styles['Heading1']))
-        story.append(Paragraph(row['calltoaction'], styles['Normal']))
-
-        story.append(Spacer(1, 12))  # Add some space after para#3
+        story.append(Paragraph(calltoaction, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space 
   
-        # Section 4
+        # Program Status
         story.append(Paragraph("Program Status", styles['Heading1']))
-        story.append(Paragraph(row['offer_status'], styles['Normal']))
+        story.append(Paragraph(offer_status, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space 
+
+        # Commit Required
+        story.append(Paragraph("Commit Required", styles['Heading1']))
+        story.append(Paragraph(commit_required, styles['Normal']))
+        story.append(Spacer(1, 12))  # Add some space 
 
         doc.build(story)
         blob = bucket.blob(fileName)
@@ -157,6 +177,7 @@ def generate_pdf(df):
 
 
 def ingestFiles(gcsUris, flag):
+    print ("Ingesting Files in Data Store")
     client_options = (
         ClientOptions(api_endpoint=f"{config.LOCATION}-discoveryengine.googleapis.com")
         if config.LOCATION != "global"
@@ -164,9 +185,9 @@ def ingestFiles(gcsUris, flag):
     )
 
     if (flag == 0):
-        mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL
+        mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.FULL
     else:
-        mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL
+        mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.FULL
 
 
     # Create a client
@@ -208,6 +229,4 @@ def ingestFiles(gcsUris, flag):
 
     # Handle the response
     print("Response: ", response)
-    print("Metadata: ", metadata)
-
-
+    print("MetaData", metadata)
