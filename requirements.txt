@@ -1,0 +1,10 @@
+#requirement txt
+fastapi
+uvicorn
+google-cloud-logging
+reportlab
+google-cloud-storage
+google-cloud-bigquery
+google-cloud-aiplatform
+google-cloud-discoveryengine
+google-api-core
