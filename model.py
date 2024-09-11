@@ -1,5 +1,7 @@
 import vertexai
+#import pandas
 import re
+#import db_dtypes
 from google.cloud import bigquery
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer

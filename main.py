@@ -55,7 +55,7 @@ async def updateIndex(request: Request):
         logMessage = json.loads(decodedMessage)
         query = logMessage['protoPayload']['serviceData']['jobCompletedEvent']['job']['jobConfiguration']['query']['query']
         statementType = logMessage['protoPayload']['serviceData']['jobCompletedEvent']['job']['jobConfiguration']['query']['statementType']
-        print ("updateIndex statementType: ", statementType)
+        print ("xxxstatementType: ", statementType)
         selectQuery = model.generateQuery(config.PROJECT_ID, config.REGION, query)
         print(f"Received Query:  ", query)
         print ("Generated Select Query", selectQuery)
