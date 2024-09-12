@@ -14,8 +14,8 @@ def decode_base64(data):
     print(f"Error decoding base64: {e}")
     return None
 
-#@app.post('/initialize')
-def initializeIndex():
+@app.post('/initialize')
+async def initializeIndex():
     try:
         print("initializeIndex")
         model.delete_all_blobs(config.BUCKET_NAME)
