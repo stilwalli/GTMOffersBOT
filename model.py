@@ -187,12 +187,13 @@ def ingestFiles(gcsUris, flag):
     if (flag == 0):
         mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.FULL
     else:
-        mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.FULL
+        mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL
 
 
     # Create a client
     client = discoveryengine.DocumentServiceClient(client_options=client_options)
 
+ 
 # The full resource name of the search engine branch.
 # e.g. projects/{project}/locations/{location}/dataStores/{data_store_id}/branches/{branch}
     parent = client.branch_path(
@@ -220,13 +221,13 @@ def ingestFiles(gcsUris, flag):
     # Make the request
     operation = client.import_documents(request=request)
 
-    print(f"Waiting for operation to complete: {operation.operation.name}")
-    response = operation.result()
+    #print(f"Waiting for operation to complete: {operation.operation.name}")
+    #response = operation.result()
 
     # After the operation is complete,
     # get information from operation metadata
-    metadata = discoveryengine.ImportDocumentsMetadata(operation.metadata)
+    #metadata = discoveryengine.ImportDocumentsMetadata(operation.metadata)
 
     # Handle the response
-    print("Response: ", response)
-    print("MetaData", metadata)
+    #print("Response: ", response)
+    #print("MetaData", metadata)

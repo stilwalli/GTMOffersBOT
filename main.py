@@ -4,10 +4,7 @@ import base64
 import config
 import model
 
-
 app = FastAPI()
-
-
 
 def decode_base64(data):
   try:
@@ -17,14 +14,21 @@ def decode_base64(data):
     print(f"Error decoding base64: {e}")
     return None
 
-@app.post('/initializeIndex')
-async def initializeIndex():
+#@app.post('/initialize')
+def initializeIndex():
     try:
         print("initializeIndex")
         model.delete_all_blobs(config.BUCKET_NAME)
+        print("initializeIndex...1")
         it = model.getOffers(config.PROJECT_ID, config.REGION, config.QUERY_ALL)
+        print("initializeIndex...2")
         uriList = model.generate_pdf(it)
-        model.ingestFiles(uriList, 0)
+        print("initializeIndex...3")
+        group_size = config.GROUP_SIZE
+        for i in range(0, len(uriList), group_size):
+            group = uriList[i:i + group_size]  # Slice the list into groups of 5
+            print("Group: ",  group)
+            model.ingestFiles(group, 1)
 
         # Return the response with a 200 status code
         return {"message": "Index initialization in progress"}, 200
@@ -68,11 +72,9 @@ async def updateIndex(request: Request):
 
 @app.get('/')
 async def index(request: Request):
-    return {"message": "Available APIs /initializeIndex or /updateIndex"}, 200
+    print ("Shashank")
+    return {"message": "Available APIs /initialize or /updateIndex"}, 200
 
 
 #model.generateQuery(config.PROJECT_ID, config.REGION, "INSERT INTO programs.program (is_pilot, offer_name) VALUES (TRUE, 'ddfdf');")
-model.delete_all_blobs(config.BUCKET_NAME)
-it = model.getOffers(config.PROJECT_ID, config.REGION, config.QUERY_ALL)
-uriList = model.generate_pdf(it)
-model.ingestFiles(uriList, 0)
+initializeIndex()
