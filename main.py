@@ -19,18 +19,23 @@ def initializeIndex():
     try:
         print("initializeIndex")
         model.delete_all_blobs(config.BUCKET_NAME)
-        print("initializeIndex...1")
         it = model.getOffers(config.PROJECT_ID, config.REGION, config.QUERY_ALL)
-        print("initializeIndex...2")
         uriList = model.generate_pdf(it)
-        print("initializeIndex...3")
         group_size = config.GROUP_SIZE
+        full = True
         for i in range(0, len(uriList), group_size):
             group = uriList[i:i + group_size]  # Slice the list into groups of 5
-            print("Group: ",  group)
             model.ingestFiles(group, 1)
-
-        # Return the response with a 200 status code
+            """
+            if (full):
+                print("Group Full ",  group)
+                model.ingestFiles(group, 1)
+                full = False
+            else:
+                print("Group Incremental ",  group)
+                model.ingestFiles(group, 1)
+            """
+         # Return the response with a 200 status code
         return {"message": "Index initialization in progress"}, 200
 
     except Exception as e:

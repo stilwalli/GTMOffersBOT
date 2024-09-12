@@ -10,6 +10,8 @@ from google.cloud import storage
 from io import BytesIO
 from google.api_core.client_options import ClientOptions
 from google.cloud import discoveryengine
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 
 import config
 
@@ -98,8 +100,8 @@ def getOffers(project_id: str, region: str, query: str):
     client = bigquery.Client()
     query_job = client.query(query)
     results = query_job.result()
-    #df = results.to_dataframe()
-    print("Query: ", query, ", Offer Query Response\n", results)
+    row_count = results.total_rows
+    print("Executing Query: ", query, ". Query Response resulted in ", row_count, " rows.")
     return results
 
 
@@ -131,7 +133,11 @@ def generate_pdf(results):
         styles = getSampleStyleSheet()
 
         # Heading/Description
-        story.append(Paragraph(offer_Name, styles['Heading1']))
+        centered_style = ParagraphStyle(name='CenteredHeading', parent=styles['Heading1'], alignment=TA_CENTER)
+        story.append(Paragraph(offer_Name, centered_style)) 
+        story.append(Spacer(1, 12))  # Add some space
+
+        story.append(Paragraph("Description", styles['Heading1']))
         story.append(Paragraph(program_description, styles['Normal']))
         story.append(Spacer(1, 12))  # Add some space
         
@@ -152,7 +158,7 @@ def generate_pdf(results):
 
 
         # More Details
-        story.append(Paragraph("More Details", styles['Heading1']))
+        story.append(Paragraph("More Information", styles['Heading1']))
         story.append(Paragraph(calltoaction, styles['Normal']))
         story.append(Spacer(1, 12))  # Add some space 
   
@@ -188,7 +194,6 @@ def ingestFiles(gcsUris, flag):
         mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.FULL
     else:
         mode = discoveryengine.ImportDocumentsRequest.ReconciliationMode.INCREMENTAL
-
 
     # Create a client
     client = discoveryengine.DocumentServiceClient(client_options=client_options)
